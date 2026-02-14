@@ -15,7 +15,7 @@ W = ppmi(C)
 # SVD
 U, S, V = np.linalg.svd(W)
 
-np.set_printoptions(precision=3)  # 有効桁３桁で表示
+np.set_printoptions(precision=3) # 设置打印精度为3位
 print(C[0])
 print(W[0])
 print(U[0])

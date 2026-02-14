@@ -1,6 +1,6 @@
 # coding: utf-8
 import sys
-sys.path.append('..')  # 親ディレクトリのファイルをインポートするための設定
+sys.path.append('..')  # 为了导入父目录中的文件而进行的设置
 import numpy as np
 from common.optimizer import SGD
 from dataset import spiral
@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from two_layer_net import TwoLayerNet
 
 
-# ハイパーパラメータの設定
+# 超参数的设置
 max_epoch = 300
 batch_size = 30
 hidden_size = 10
@@ -18,7 +18,7 @@ x, t = spiral.load_data()
 model = TwoLayerNet(input_size=2, hidden_size=hidden_size, output_size=3)
 optimizer = SGD(lr=learning_rate)
 
-# 学習で使用する変数
+# 训练中使用的变量
 data_size = len(x)
 max_iters = data_size // batch_size
 total_loss = 0
@@ -26,7 +26,7 @@ loss_count = 0
 loss_list = []
 
 for epoch in range(max_epoch):
-    # データのシャッフル
+    # 打乱数据顺序（洗牌）
     idx = np.random.permutation(data_size)
     x = x[idx]
     t = t[idx]
@@ -35,7 +35,7 @@ for epoch in range(max_epoch):
         batch_x = x[iters*batch_size:(iters+1)*batch_size]
         batch_t = t[iters*batch_size:(iters+1)*batch_size]
 
-        # 勾配を求め、パラメータを更新
+        # 计算梯度，更新参数
         loss = model.forward(batch_x, batch_t)
         model.backward()
         optimizer.update(model.params, model.grads)
@@ -43,7 +43,7 @@ for epoch in range(max_epoch):
         total_loss += loss
         loss_count += 1
 
-        # 定期的に学習経過を出力
+        # 定期输出学习进度
         if (iters+1) % 10 == 0:
             avg_loss = total_loss / loss_count
             print('| epoch %d |  iter %d / %d | loss %.2f'
@@ -52,13 +52,13 @@ for epoch in range(max_epoch):
             total_loss, loss_count = 0, 0
 
 
-# 学習結果のプロット
+# 绘制学习结果（损失函数曲线）
 plt.plot(np.arange(len(loss_list)), loss_list, label='train')
 plt.xlabel('iterations (x10)')
 plt.ylabel('loss')
 plt.show()
 
-# 境界領域のプロット
+# 绘制决策边界
 h = 0.001
 x_min, x_max = x[:, 0].min() - .1, x[:, 0].max() + .1
 y_min, y_max = x[:, 1].min() - .1, x[:, 1].max() + .1
@@ -70,7 +70,7 @@ Z = predict_cls.reshape(xx.shape)
 plt.contourf(xx, yy, Z)
 plt.axis('off')
 
-# データ点のプロット
+# 绘制数据点
 x, t = spiral.load_data()
 N = 100
 CLS_NUM = 3

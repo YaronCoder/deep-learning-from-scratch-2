@@ -6,6 +6,7 @@ from common.np import *
 
 
 def preprocess(text):
+    """文本预处理：分词并建立单词与ID的映射"""
     text = text.lower()
     text = text.replace('.', ' .')
     words = text.split(' ')
@@ -24,11 +25,11 @@ def preprocess(text):
 
 
 def cos_similarity(x, y, eps=1e-8):
-    '''コサイン類似度の算出
+    '''计算余弦相似度
 
-    :param x: ベクトル
-    :param y: ベクトル
-    :param eps: ”0割り”防止のための微小値
+    :param x: 向量
+    :param y: 向量
+    :param eps: 用于防止“除以0”的微小值
     :return:
     '''
     nx = x / (np.sqrt(np.sum(x ** 2)) + eps)
@@ -37,13 +38,13 @@ def cos_similarity(x, y, eps=1e-8):
 
 
 def most_similar(query, word_to_id, id_to_word, word_matrix, top=5):
-    '''類似単語の検索
+    '''搜索相似单词
 
-    :param query: クエリ（テキスト）
-    :param word_to_id: 単語から単語IDへのディクショナリ
-    :param id_to_word: 単語IDから単語へのディクショナリ
-    :param word_matrix: 単語ベクトルをまとめた行列。各行に対応する単語のベクトルが格納されていることを想定する
-    :param top: 上位何位まで表示するか
+    :param query: 查询词（文本）
+    :param word_to_id: 单词到单词ID的字典
+    :param id_to_word: 单词ID到单词的字典
+    :param word_matrix: 汇总了词向量的矩阵。假设每一行存储对应单词的向量
+    :param top: 显示前几名
     '''
     if query not in word_to_id:
         print('%s is not found' % query)
@@ -60,6 +61,7 @@ def most_similar(query, word_to_id, id_to_word, word_matrix, top=5):
         similarity[i] = cos_similarity(word_matrix[i], query_vec)
 
     count = 0
+    # 按照相似度降序排列索引
     for i in (-1 * similarity).argsort():
         if id_to_word[i] == query:
             continue
@@ -71,11 +73,11 @@ def most_similar(query, word_to_id, id_to_word, word_matrix, top=5):
 
 
 def convert_one_hot(corpus, vocab_size):
-    '''one-hot表現への変換
+    '''转换为 one-hot 表示
 
-    :param corpus: 単語IDのリスト（1次元もしくは2次元のNumPy配列）
-    :param vocab_size: 語彙数
-    :return: one-hot表現（2次元もしくは3次元のNumPy配列）
+    :param corpus: 单词ID列表（一维或二维的 NumPy 数组）
+    :param vocab_size: 词汇量大小
+    :return: one-hot 表示（二维或三维的 NumPy 数组）
     '''
     N = corpus.shape[0]
 
@@ -95,12 +97,12 @@ def convert_one_hot(corpus, vocab_size):
 
 
 def create_co_matrix(corpus, vocab_size, window_size=1):
-    '''共起行列の作成
+    '''创建共现矩阵
 
-    :param corpus: コーパス（単語IDのリスト）
-    :param vocab_size:語彙数
-    :param window_size:ウィンドウサイズ（ウィンドウサイズが1のときは、単語の左右1単語がコンテキスト）
-    :return: 共起行列
+    :param corpus: 语料库（单词ID列表）
+    :param vocab_size: 词汇量大小
+    :param window_size: 窗口大小（窗口大小为1时，单词左右各1个单词为上下文）
+    :return: 共现矩阵
     '''
     corpus_size = len(corpus)
     co_matrix = np.zeros((vocab_size, vocab_size), dtype=np.int32)
@@ -122,10 +124,10 @@ def create_co_matrix(corpus, vocab_size, window_size=1):
 
 
 def ppmi(C, verbose=False, eps = 1e-8):
-    '''PPMI（正の相互情報量）の作成
+    '''创建 PPMI（正向互信息）矩阵
 
-    :param C: 共起行列
-    :param verbose: 進行状況を出力するかどうか
+    :param C: 共现矩阵
+    :param verbose: 是否输出进度信息
     :return:
     '''
     M = np.zeros_like(C, dtype=np.float32)
@@ -136,7 +138,9 @@ def ppmi(C, verbose=False, eps = 1e-8):
 
     for i in range(C.shape[0]):
         for j in range(C.shape[1]):
+            # 计算 PMI (Pointwise Mutual Information)
             pmi = np.log2(C[i, j] * N / (S[j]*S[i]) + eps)
+            # PPMI 只取正值
             M[i, j] = max(0, pmi)
 
             if verbose:
@@ -147,10 +151,11 @@ def ppmi(C, verbose=False, eps = 1e-8):
 
 
 def create_contexts_target(corpus, window_size=1):
-    '''コンテキストとターゲットの作成
+    '''创建上下文（contexts）和目标词（target）
+    用于 CBOW 等模型的训练数据准备
 
-    :param corpus: コーパス（単語IDのリスト）
-    :param window_size: ウィンドウサイズ（ウィンドウサイズが1のときは、単語の左右1単語がコンテキスト）
+    :param corpus: 语料库（单词ID列表）
+    :param window_size: 窗口大小
     :return:
     '''
     target = corpus[window_size:-window_size]
@@ -168,6 +173,7 @@ def create_contexts_target(corpus, window_size=1):
 
 
 def to_cpu(x):
+    """将数据移动到 CPU"""
     import numpy
     if type(x) == numpy.ndarray:
         return x
@@ -175,6 +181,7 @@ def to_cpu(x):
 
 
 def to_gpu(x):
+    """将数据移动到 GPU (CuPy)"""
     import cupy
     if type(x) == cupy.ndarray:
         return x
@@ -182,6 +189,7 @@ def to_gpu(x):
 
 
 def clip_grads(grads, max_norm):
+    """梯度裁剪，防止梯度爆炸"""
     total_norm = 0
     for grad in grads:
         total_norm += np.sum(grad ** 2)
@@ -194,6 +202,7 @@ def clip_grads(grads, max_norm):
 
 
 def eval_perplexity(model, corpus, batch_size=10, time_size=35):
+    """评估模型的困惑度（Perplexity）"""
     print('evaluating perplexity ...')
     corpus_size = len(corpus)
     total_loss = 0
@@ -226,13 +235,14 @@ def eval_perplexity(model, corpus, batch_size=10, time_size=35):
 
 def eval_seq2seq(model, question, correct, id_to_char,
                  verbose=False, is_reverse=False):
+    """评估 seq2seq 模型的预测准确度"""
     correct = correct.flatten()
-    # 頭の区切り文字
+    # 起始分隔符 (Start Symbol)
     start_id = correct[0]
     correct = correct[1:]
     guess = model.generate(question, start_id, len(correct))
 
-    # 文字列へ変換
+    # 转换为字符串
     question = ''.join([id_to_char[int(c)] for c in question.flatten()])
     correct = ''.join([id_to_char[int(c)] for c in correct])
     guess = ''.join([id_to_char[int(c)] for c in guess])
@@ -263,6 +273,7 @@ def eval_seq2seq(model, question, correct, id_to_char,
 
 
 def analogy(a, b, c, word_to_id, id_to_word, word_matrix, top=5, answer=None):
+    """执行类比推理 (a : b = c : ?)"""
     for word in (a, b, c):
         if word not in word_to_id:
             print('%s is not found' % word)
@@ -270,6 +281,7 @@ def analogy(a, b, c, word_to_id, id_to_word, word_matrix, top=5, answer=None):
 
     print('\n[analogy] ' + a + ':' + b + ' = ' + c + ':?')
     a_vec, b_vec, c_vec = word_matrix[word_to_id[a]], word_matrix[word_to_id[b]], word_matrix[word_to_id[c]]
+    # 计算查询向量： vec(b) - vec(a) + vec(c)
     query_vec = b_vec - a_vec + c_vec
     query_vec = normalize(query_vec)
 
@@ -292,6 +304,7 @@ def analogy(a, b, c, word_to_id, id_to_word, word_matrix, top=5, answer=None):
 
 
 def normalize(x):
+    """向量归一化"""
     if x.ndim == 2:
         s = np.sqrt((x * x).sum(1))
         x /= s.reshape((s.shape[0], 1))
